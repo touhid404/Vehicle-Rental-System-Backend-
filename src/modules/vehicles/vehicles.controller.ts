@@ -43,17 +43,100 @@ export const getAllVehicles = async (req: Request, res: Response) => {
       return res.status(404).json({
         success: true,
         message: "No vehicles found",
-        });
-    }
-    res
-      .status(200)
-      .json({
-        success: true,
-        message: "Vehicles retrieved successfully",
-        data: result.rows,
       });
+    }
+    res.status(200).json({
+      success: true,
+      message: "Vehicles retrieved successfully",
+      data: result.rows,
+    });
   } catch (error) {
     console.error("Error fetching vehicles:", error);
+    res.status(500).json({ success: false, message: "Internal Server Error" });
+  }
+};
+
+export const getVehicleById = async (req: Request, res: Response) => {
+  try {
+    const vehicleId = req.params.vehicleId;
+    const result = await pool.query("SELECT * FROM vehicles WHERE id = $1", [
+      vehicleId,
+    ]);
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Vehicle not found",
+      });
+    }
+    res.status(200).json({
+      success: true,
+      message: "Vehicle retrieved successfully",
+      data: result.rows[0],
+    });
+  } catch (error) {
+    console.error("Error fetching vehicle by ID:", error);
+    res.status(500).json({ success: false, message: "Internal Server Error" });
+  }
+};
+
+export const updateVehicle = async (req: Request, res: Response) => {
+  try {
+    const vehicleId = req.params.vehicleId;
+    const {
+      vehicle_name,
+      type,
+      registration_number,
+      daily_rent_price,
+      availability_status,
+    } = req.body;
+    const result = await pool.query(
+      "UPDATE vehicles SET vehicle_name = $1, type = $2, registration_number = $3, daily_rent_price = $4, availability_status = $5 WHERE id = $6 RETURNING *",
+      [
+        vehicle_name,
+        type,
+        registration_number,
+        daily_rent_price,
+        availability_status,
+        vehicleId,
+      ]
+    );
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Vehicle not found",
+      });
+    }
+    res.status(200).json({
+      success: true,
+      message: "Vehicle updated successfully",
+      data: result.rows[0],
+    });
+  } catch (error) {
+    console.error("Error updating vehicle:", error);
+    res.status(500).json({ success: false, message: "Internal Server Error" });
+  }
+};
+
+export const deleteVehicle = async (req: Request, res: Response) => {
+  try {
+    const vehicleId = req.params.vehicleId;
+    const result = await pool.query(
+      "DELETE FROM vehicles WHERE id = $1 RETURNING *",
+      [vehicleId]
+    );
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Vehicle not found",
+      });
+    }
+    res.status(200).json({
+      success: true,
+      message: "Vehicle deleted successfully",
+      data: result.rows[0],
+    });
+  } catch (error) {
+    console.error("Error deleting vehicle:", error);
     res.status(500).json({ success: false, message: "Internal Server Error" });
   }
 };
