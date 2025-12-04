@@ -3,7 +3,7 @@ import config from "./config";
 import { initDB, pool } from "./config/db";
 import { usersRoutes } from "./modules/user/user.routes";
 import { authRoutes } from "./modules/auth/auth.routes";
-
+import { vehiclesRoutes } from "./modules/vehicles/vehicles.routes";
 
 const app = express();
 
@@ -16,18 +16,20 @@ app.get("/", (req: Request, res: Response) => {
   res.send("Welcome to Vehicle Rental System Backend!");
 });
 
+// Auth Routes
+app.use("/api/v1/auth", authRoutes);
 
-app.use('/api/v1/auth',authRoutes);
 // app.use('/users',usersRoutes);
 
-app.use((req,res)=>{
+// Vehicle Routes
+app.use("/api/v1/vehicles", vehiclesRoutes);
 
+app.use((req, res) => {
   res.status(404).send({
-    success:false,
-    message:"Route not found"
-  })
-
-})
+    success: false,
+    message: "Route not found",
+  });
+});
 
 // Start Server
 app.listen(config.port, () => {
