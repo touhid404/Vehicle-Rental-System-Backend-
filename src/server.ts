@@ -18,11 +18,10 @@ app.get("/", (req: Request, res: Response) => {
 
 // Auth Routes
 app.use("/api/v1/auth", authRoutes);
-
-// app.use('/users',usersRoutes);
-
 // Vehicle Routes
 app.use("/api/v1/vehicles", vehiclesRoutes);
+// User Routes
+app.use("/api/v1/users", usersRoutes);
 
 app.use((req, res) => {
   res.status(404).send({
