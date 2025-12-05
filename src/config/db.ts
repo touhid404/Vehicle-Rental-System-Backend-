@@ -28,6 +28,19 @@ const initDB = async () => {
 );
     `);
 
+
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS bookings (
+        id SERIAL PRIMARY KEY,
+        customer_id INTEGER NOT NULL REFERENCES users(id),
+        vehicle_id INTEGER NOT NULL REFERENCES vehicles(id),
+        rent_start_date DATE NOT NULL,
+        rent_end_date DATE NOT NULL CHECK (rent_end_date > rent_start_date),
+        total_price NUMERIC(10, 2) NOT NULL CHECK (total_price > 0),
+        status VARCHAR(20) NOT NULL CHECK (status IN ('active', 'cancelled', 'returned'))
+);
+    `);
+
     console.log("Tables are ready");
   } catch (error) {
     console.error("DB Initialization Error:", error);
@@ -36,9 +49,4 @@ const initDB = async () => {
 
 export { pool, initDB };
 
-// id	Auto-generated
-// vehicle_name	Required
-// type	'car', 'bike', 'van' or 'SUV'
-// registration_number	Required, unique
-// daily_rent_price	Required, positive
-// availability_status	'available' or 'booked'
+

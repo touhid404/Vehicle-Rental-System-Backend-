@@ -11,6 +11,6 @@ const router = express.Router();
 router.get("/", getAllUsers);
 // router.get("/:id", getUserById);
 router.put("/:userId", authMiddleware("admin", "customer"), updateUserById);
-router.delete("/:id", deleteUserById);
+router.delete("/:userId", authMiddleware("admin"), deleteUserById);
 
 export const usersRoutes = router;
