@@ -4,6 +4,7 @@ import { initDB, pool } from "./config/db";
 import { usersRoutes } from "./modules/user/user.routes";
 import { authRoutes } from "./modules/auth/auth.routes";
 import { vehiclesRoutes } from "./modules/vehicles/vehicles.routes";
+import { bookingsRoutes } from "./modules/booking/booking.routes";
 
 const app = express();
 
@@ -22,6 +23,8 @@ app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/vehicles", vehiclesRoutes);
 // User Routes
 app.use("/api/v1/users", usersRoutes);
+// Booking Routes
+app.use("/api/v1/bookings", bookingsRoutes);
 
 app.use((req, res) => {
   res.status(404).send({
