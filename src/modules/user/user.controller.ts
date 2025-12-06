@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { pool } from "../../config/db";
-import { deleteUserService, updateUserService } from "./user.service";
+import { activeBookingsCheck, deleteUserService, updateUserService } from "./user.service";
 
 export const getAllUsers = async (req: Request, res: Response) => {
   try {
@@ -52,9 +52,17 @@ export const updateUserById = async (req: Request, res: Response) => {
 export const deleteUserById = async (req: Request, res: Response) => {
   try {
     const userId = Number(req.params.userId);
-    const userRole = req.user?.role;
 
-    const result = await deleteUserService(userId, userRole);
+    // Check user active bookings availability
+    const bookingCheck = await activeBookingsCheck(userId);
+    if (bookingCheck.rows.length > 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Cannot delete user: Active bookings found",
+      });
+    }
+
+    const result = await deleteUserService(userId);
 
     if (result.error) {
       return res.status(result.status).json({

@@ -57,28 +57,14 @@ export const updateUserService = async (
   return { data: updatedUser.rows[0] };
 };
 
-
-
-export const deleteUserService = async (userId: number, userRole: string) => {
-  // 1. Only admin can delete
-  if (userRole !== "admin") {
-    return { error: "Forbidden: Only admin can delete users", status: 403 };
-  }
-
-  // 2. Check active bookings of user
-  const bookingCheck = await pool.query(
-    `SELECT * FROM bookings WHERE user_id = $1 AND status = 'active'`,
+export const activeBookingsCheck = async (userId: number) => {
+  return await pool.query(
+    `SELECT * FROM bookings WHERE customer_id = $1 AND status = 'active'`,
     [userId]
   );
+};
 
-  if (bookingCheck.rows.length > 0) {
-    return {
-      error: "Cannot delete user: Active bookings found",
-      status: 400,
-    };
-  }
-
-  // 3. Try deleting user
+export const deleteUserService = async (userId: number) => {
   const result = await pool.query(
     `DELETE FROM users WHERE id = $1 RETURNING *`,
     [userId]
@@ -90,5 +76,3 @@ export const deleteUserService = async (userId: number, userRole: string) => {
 
   return { data: result.rows[0] };
 };
-
-
