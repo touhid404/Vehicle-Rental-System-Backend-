@@ -5,6 +5,7 @@ import { usersRoutes } from "./modules/user/user.routes";
 import { authRoutes } from "./modules/auth/auth.routes";
 import { vehiclesRoutes } from "./modules/vehicles/vehicles.routes";
 import { bookingsRoutes } from "./modules/booking/booking.routes";
+import { startAutoReturnCron } from "./cron/autoReturn.cron";
 
 const app = express();
 
@@ -32,7 +33,8 @@ app.use((req, res) => {
     message: "Route not found",
   });
 });
-
+// CRON jobs , runs every one minitue
+startAutoReturnCron();
 // Start Server
 app.listen(config.port, () => {
   console.log(`Example app listening on port ${config.port}`);

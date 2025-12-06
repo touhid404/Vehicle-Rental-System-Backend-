@@ -99,7 +99,6 @@ export const updateBookingsInDB = async (bookingId: number, status: string) => {
   };
 };
 
-
 export const markBookingReturnedInDB = async (bookingId: number) => {
   // 1. Update booking status
   const bookingQuery = `
@@ -132,4 +131,18 @@ export const markBookingReturnedInDB = async (bookingId: number) => {
       availability_status: vehicleRes.rows[0].availability_status,
     },
   };
+};
+
+// For cron
+export const autoReturnExpiredBookingsInDB = async () => {
+  const query = `
+    UPDATE bookings
+    SET status = 'returned'
+    WHERE status = 'active'
+    AND rent_end_date <= NOW()
+    RETURNING *;
+  `;
+
+  const result = await pool.query(query);
+  return result.rows;
 };

@@ -21,8 +21,8 @@ export const createBooking = async (req: Request, res: Response) => {
       });
     }
 
-    // Check if customer ID matches token ID
-    if (req.user?.id !== customer_id) {
+    // Check if customer ID matches token ID valid only for customer
+    if (req.user?.role !== "admin" && req.user?.id !== customer_id) {
       return res.status(403).json({
         success: false,
         message:
@@ -146,7 +146,7 @@ export const updateBooking = async (req: Request, res: Response) => {
       if (bookingStartDate <= currentDate) {
         return res.status(400).json({
           success: false,
-          message: "Cannot cancel a booking that has already started or passed",
+          message: "Cannot cancel a booking that has already started.",
         });
       }
 
