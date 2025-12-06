@@ -9,11 +9,11 @@ import {
 import { authMiddleware } from "../../middleware/auth";
 
 const router = express.Router();
-
+// Ok checked
 // Public for everyone
 router.get("/", getAllVehicles);
 router.get("/:vehicleId", getVehicleById);
-
+// Ok checked
 // Protected routes - only for admin
 router.post("/", authMiddleware("admin"), createVehicle);
 router.put("/:vehicleId", authMiddleware("admin"), updateVehicle);

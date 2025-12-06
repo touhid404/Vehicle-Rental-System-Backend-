@@ -13,3 +13,45 @@ export const createVehicleInDB = async (payload: Record<string, unknown>) => {
   );
   return result;
 };
+
+export const updateVehicleInDB = async (
+  vehicleId: number,
+  updateData: Record<string, unknown>
+) => {
+  const allowedFields = [
+    "vehicle_name",
+    "type",
+    "registration_number",
+    "daily_rent_price",
+    "availability_status",
+  ];
+
+  const updates: string[] = [];
+  const values: any[] = [];
+  let index = 1;
+
+  for (const field of allowedFields) {
+    if (updateData[field] !== undefined) {
+      updates.push(`${field} = $${index}`);
+      values.push(updateData[field]);
+      index++;
+    }
+  }
+
+  if (updates.length === 0) {
+    return { error: "No fields provided for update" };
+  }
+
+  values.push(vehicleId);
+
+  const query = `
+    UPDATE vehicles 
+    SET ${updates.join(", ")} 
+    WHERE id = $${index}
+    RETURNING *;
+  `;
+
+  const result = await pool.query(query, values);
+
+  return result.rows[0] || null;
+};

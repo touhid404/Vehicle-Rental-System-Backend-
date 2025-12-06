@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
-import { createVehicleInDB } from "./vehicles.service";
+import { createVehicleInDB, updateVehicleInDB } from "./vehicles.service";
 import { pool } from "../../config/db";
-
+// Ok checked
 export const createVehicle = async (req: Request, res: Response) => {
   try {
     if (
@@ -35,7 +35,7 @@ export const createVehicle = async (req: Request, res: Response) => {
     res.status(500).json({ success: false, message: "Internal Server Error" });
   }
 };
-
+// Ok checked
 export const getAllVehicles = async (req: Request, res: Response) => {
   try {
     const result = await pool.query("SELECT * FROM vehicles");
@@ -43,6 +43,7 @@ export const getAllVehicles = async (req: Request, res: Response) => {
       return res.status(404).json({
         success: true,
         message: "No vehicles found",
+        data: [],
       });
     }
     res.status(200).json({
@@ -64,8 +65,8 @@ export const getVehicleById = async (req: Request, res: Response) => {
     ]);
     if (result.rows.length === 0) {
       return res.status(404).json({
-        success: false,
-        message: "Vehicle not found",
+        success: true,
+        message: "Vehicle not found with the given ID",
       });
     }
     res.status(200).json({
@@ -79,38 +80,33 @@ export const getVehicleById = async (req: Request, res: Response) => {
   }
 };
 
+
 export const updateVehicle = async (req: Request, res: Response) => {
   try {
-    const vehicleId = req.params.vehicleId;
-    const {
-      vehicle_name,
-      type,
-      registration_number,
-      daily_rent_price,
-      availability_status,
-    } = req.body;
-    const result = await pool.query(
-      "UPDATE vehicles SET vehicle_name = $1, type = $2, registration_number = $3, daily_rent_price = $4, availability_status = $5 WHERE id = $6 RETURNING *",
-      [
-        vehicle_name,
-        type,
-        registration_number,
-        daily_rent_price,
-        availability_status,
-        vehicleId,
-      ]
-    );
-    if (result.rows.length === 0) {
+    const vehicleId = Number(req.params.vehicleId);
+
+    const updatedVehicle = await updateVehicleInDB(vehicleId, req.body);
+
+    if (updatedVehicle?.error) {
+      return res.status(400).json({
+        success: false,
+        message: updatedVehicle.error,
+      });
+    }
+
+    if (!updatedVehicle) {
       return res.status(404).json({
         success: false,
         message: "Vehicle not found",
       });
     }
+
     res.status(200).json({
       success: true,
       message: "Vehicle updated successfully",
-      data: result.rows[0],
+      data: updatedVehicle,
     });
+    
   } catch (error) {
     console.error("Error updating vehicle:", error);
     res.status(500).json({ success: false, message: "Internal Server Error" });

@@ -25,13 +25,11 @@ export const signup = async (req: Request, res: Response) => {
     const user = result.rows[0];
 
     if (user.password) delete user.password;
-    res
-      .status(201)
-      .json({
-        success: true,
-        message: "User registered successfully",
-        data: user,
-      });
+    res.status(201).json({
+      success: true,
+      message: "User registered successfully",
+      data: user,
+    });
   } catch (error) {
     console.error("Error inserting user:", error);
     res.status(500).json({ success: false, message: "Internal Server Error" });
@@ -42,6 +40,11 @@ export const signin = async (req: Request, res: Response) => {
   const { email, password } = req.body;
 
   try {
+    if (!email || !password) {
+      return res
+        .status(400)
+        .json({ message: "Email and password are required" });
+    }
     const result = await loginUser(email, password);
 
     if (!result) {
