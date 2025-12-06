@@ -72,22 +72,64 @@ export const checkBookingStartDate = async (bookingId: number) => {
   return result.rows[0];
 };
 
-export const updateBookingsInDB = async (
-  bookingId: number,
-  status: string
-) => {};
+export const updateBookingsInDB = async (bookingId: number, status: string) => {
+  const query = `
+    UPDATE bookings
+    SET status = $1
+    WHERE id = $2
+    RETURNING *;
+  `;
 
-// return type
-// {
-//   "success": true,
-//   "message": "Booking cancelled successfully",
-//   "data": {
-//     "id": 1,
-//     "customer_id": 1,
-//     "vehicle_id": 2,
-//     "rent_start_date": "2024-01-15",
-//     "rent_end_date": "2024-01-20",
-//     "total_price": 250,
-//     "status": "cancelled"
-//   }
-// }
+  const updated = await pool.query(query, [status, bookingId]);
+
+  if (updated.rowCount === 0) {
+    throw new Error("Booking not found");
+  }
+
+  const booking = updated.rows[0];
+
+  return {
+    id: booking.id,
+    customer_id: booking.customer_id,
+    vehicle_id: booking.vehicle_id,
+    rent_start_date: booking.rent_start_date,
+    rent_end_date: booking.rent_end_date,
+    total_price: booking.total_price,
+    status: booking.status,
+  };
+};
+
+
+export const markBookingReturnedInDB = async (bookingId: number) => {
+  // 1. Update booking status
+  const bookingQuery = `
+    UPDATE bookings
+    SET status = 'returned'
+    WHERE id = $1
+    RETURNING *;
+  `;
+
+  const bookingRes = await pool.query(bookingQuery, [bookingId]);
+  const booking = bookingRes.rows[0];
+
+  if (!booking) {
+    throw new Error("Booking not found");
+  }
+
+  // 2. Vehicle → set available
+  const vehicleQuery = `
+    UPDATE vehicles
+    SET availability_status = 'available'
+    WHERE id = $1
+    RETURNING availability_status;
+  `;
+
+  const vehicleRes = await pool.query(vehicleQuery, [booking.vehicle_id]);
+
+  return {
+    ...booking,
+    vehicle: {
+      availability_status: vehicleRes.rows[0].availability_status,
+    },
+  };
+};

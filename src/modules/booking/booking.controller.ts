@@ -5,9 +5,9 @@ import {
   createBookingInDB,
   getAllBookingsFromDB,
   getAllBookingsOfCustomerDB,
+  markBookingReturnedInDB,
   updateBookingsInDB,
 } from "./booking.service";
-import { pool } from "../../config/db";
 
 export const createBooking = async (req: Request, res: Response) => {
   try {
@@ -47,8 +47,9 @@ export const createBooking = async (req: Request, res: Response) => {
     const endDate = new Date(rent_end_date);
 
     const days =
-      Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 3600 * 24)) +
-      1;
+      Math.ceil(
+        (endDate.getTime() - startDate.getTime()) / (1000 * 3600 * 24)
+      ) + 1;
 
     const totalPrice = days * vehicle.daily_rent_price;
 
@@ -75,7 +76,6 @@ export const createBooking = async (req: Request, res: Response) => {
     });
   }
 };
-
 
 export const getAllBookings = async (req: Request, res: Response) => {
   try {
@@ -107,27 +107,73 @@ export const getAllBookings = async (req: Request, res: Response) => {
 
 export const updateBooking = async (req: Request, res: Response) => {
   try {
-    const bookingId = req.params.bookingId;
-    const status = req.body.status;
-    const getRole = req.user?.role;
-    const userIdFromToken = req.user?.id;
-    if (getRole === "customer") {
-      // Check if Booking start date is in future
-      const bookingResult = await checkBookingStartDate(Number(bookingId));
-      const currentDate = new Date();
+    const bookingId = Number(req.params.bookingId);
+    const { status } = req.body;
 
-      // Date format 2024-01-05 in Db
+    const role = req.user?.role;
+    const userIdFromToken = req.user?.id;
+
+    if (!status) {
+      return res.status(400).json({
+        success: false,
+        message: "Status field is required",
+      });
+    }
+
+    if (role === "customer" && status === "cancelled") {
+      const bookingResult = await checkBookingStartDate(bookingId);
+
+      if (!bookingResult) {
+        return res.status(404).json({
+          success: false,
+          message: "Booking not found",
+        });
+      }
+
+      if (
+        role === "customer" &&
+        bookingResult.customer_id !== userIdFromToken
+      ) {
+        return res.status(403).json({
+          success: false,
+          message: "You are not authorized to cancel this booking",
+        });
+      }
+
+      const currentDate = new Date();
       const bookingStartDate = new Date(bookingResult.rent_start_date);
+
       if (bookingStartDate <= currentDate) {
         return res.status(400).json({
           success: false,
-          message: "Cannot cancel booking that has already started or passed",
+          message: "Cannot cancel a booking that has already started or passed",
         });
       }
-      
 
-      // const result = await updateBookingsInDB(bookingId, status, userIdFromToken, getRole);
+      const result = await updateBookingsInDB(bookingId, "cancelled");
+
+      return res.status(200).json({
+        success: true,
+        message: "Booking cancelled successfully",
+        data: result,
+      });
     }
+
+    if (role === "admin" && status === "returned") {
+      const result = await markBookingReturnedInDB(bookingId);
+
+      return res.status(200).json({
+        success: true,
+        message: "Booking marked as returned. Vehicle is now available",
+        data: result,
+      });
+    }
+
+    // If no valid condition matched
+    return res.status(403).json({
+      success: false,
+      message: "You are not authorized to update booking status this way",
+    });
   } catch (error) {
     console.error("Error updating booking:", error);
     res.status(500).json({
